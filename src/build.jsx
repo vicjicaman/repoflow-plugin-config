@@ -12,6 +12,7 @@ import {
 
 export const start = (params, cxt) => {
 
+  // ### TAKE THE MODULE BASELINE FROM THE PARAMS!!! === ONLY SAME BASELINE CONFIGS ARE ALLOWED
   const {
     module: {
       code: {
@@ -37,12 +38,10 @@ export const start = (params, cxt) => {
     const dependenciesConfigValues = {};
     const configValues = {};
 
-    for (const dep of config.dependencies) {
+    for (const moduleid in config.dependencies) {
       const {
-        moduleid: moduleidFull,
         version
-      } = dep;
-      const [moduleid, baselineid] = moduleidFull.split("@");
+      } = config.dependencies[moduleid];
 
 
       if (version.startsWith("file:")) {
