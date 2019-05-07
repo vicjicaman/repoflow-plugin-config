@@ -4,12 +4,10 @@ import * as Dependencies from './dependencies';
 import * as Build from './build';
 import * as Run from './run';
 import {publish} from './publish';
-import {init} from './init';
-import {configure} from './configure';
 
 (async () => {
 
-  await Plugin.run("service", {
+  await Plugin.run("config", {
     dependencies: {
       list: Dependencies.list,
       sync: Dependencies.sync
@@ -18,8 +16,8 @@ import {configure} from './configure';
       start: Run.start
     },
     build: {
-      configure,
-      init,
+      configure: Build.configue,
+      init: Build.init,
       start: Build.start
     },
     publish

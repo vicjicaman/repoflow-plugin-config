@@ -2,8 +2,43 @@ import _ from 'lodash'
 import fs from 'fs-extra'
 import path from 'path'
 import YAML from 'yamljs';
-import {spawn} from '@nebulario/core-process';
-import {IO} from '@nebulario/core-plugin-request';
+import {
+  spawn,
+  wait
+} from '@nebulario/core-process';
+import {
+  IO
+} from '@nebulario/core-plugin-request';
+
+/*
+
+
+
+
+
+task ->
+
+
+execution
+- clear
+- init
+- start
+  - restart
+  - stop
+
+
+plugin
+- clear -> lock request
+- init  -> lock request
+- start -> start operation! => return opid -> saved by the execution -> start and immediate return started!... or error!
+  - restart -> wait stop within plugin and return started!...
+  - stop -> wait stop within plugin and return stopped!
+
+
+
+
+
+*/
 
 const modify = (folder, compFile, func) => {
   const inputPath = path.join(folder, "dist");
@@ -25,32 +60,63 @@ const modify = (folder, compFile, func) => {
 
 export const start = (params, cxt) => {
 
-  const {
-    module: {
-      moduleid,
-      mode,
-      fullname,
-      code: {
-        paths: {
-          absolute: {
-            folder
-          }
+  const watcher = async (operation, cxy) => {
+
+    const {
+      operationid
+    } = operation;
+
+    /*const {
+      module: {
+        moduleid,
+        mode,
+        fullname,
+        code: {
+          paths: {
+            absolute: {
+              folder
+            }
+          },
+          dependencies
         },
-        dependencies
+        instance: {
+          instanceid
+        }
       },
-      instance: {
-        instanceid
-      }
-    },
-    modules
-  } = params;
+      modules
+    } = params;
 
-  modify(folder, "service.yaml", content => content);
-  modify(folder, "deployment.yaml", content => content);
+    modify(folder, "service.yaml", content => content);
+    modify(folder, "deployment.yaml", content => content);*/
 
-  IO.sendEvent("run.started", {
-    data: ""
-  }, cxt);
+    console.log("Config watcher started")
 
-  return null;
+    await wait(2500);
+
+    IO.sendEvent("started", {
+      operationid,
+      data: ""
+    }, cxt);
+
+    while (operation.status !== "stopping") {
+      IO.sendEvent("alive", {
+        operationid,
+        data: ""
+      }, cxt);
+      await wait(2500);
+    }
+
+    await wait(2500);
+
+    IO.sendEvent("stopped", {
+      operationid,
+      data: ""
+    }, cxt);
+  }
+
+
+  return {
+    promise: watcher,
+    process: null
+  };
 }
