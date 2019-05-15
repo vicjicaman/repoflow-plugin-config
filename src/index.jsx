@@ -12,11 +12,9 @@ import {publish} from './publish';
       list: Dependencies.list,
       sync: Dependencies.sync
     },
-    run: {
-      start: Run.start
-    },
     build: {
       configure: Build.configue,
+      clear: Build.clear,
       init: Build.init,
       start: Build.start
     },

@@ -1,115 +1,62 @@
+import _ from 'lodash'
+import fs from 'fs-extra'
 import path from 'path'
-import fs from 'fs'
+import YAML from 'yamljs';
 import {
-  spawn
+  exec,
+  spawn,
+  wait
 } from '@nebulario/core-process';
 import {
   Operation,
   IO,
-  JSON,
-  Config
+  JSON as JUtils,
+  Config,
+  Repository,
+  Watcher
 } from '@nebulario/core-plugin-request';
 
 
 
-
-export const configure = async (params, cxt) => {
+export const clear = async (params, cxt) => {
 
   const {
-    configuration,
-    module: {
-      moduleid,
-      mode,
-      fullname,
-      code: {
-        paths: {
-          absolute: {
-            folder
-          }
-        },
-        dependencies
-      }
-    },
-    modules
+    performer: {
+      instanced
+    }
   } = params;
 
-  for (const dep of dependencies) {
-    const {kind, filename, path, checkout} = dep;
-    if (kind === "inner" || checkout === null) {
-      continue;
-    }
-
-    if (configuration === "develop") {
-      const ModInfo = _.find(modules, {moduleid: dep.moduleid});
-
-      if (ModInfo) {
-        await sync({
-          module: {
-            moduleid,
-            code: {
-              paths: {
-                absolute: {
-                  folder
-                }
-              }
-            }
-          },
-          dependency: {
-            filename,
-            path,
-            version: "file:./../" + dep.moduleid
-          }
-        }, cxt);
-      }
-    }
-
-    if (configuration === "baseline") {
-      if (checkout && checkout.baseline.current) {
-        await sync({
-          module: {
-            moduleid,
-            code: {
-              paths: {
-                absolute: {
-                  folder
-                }
-              }
-            }
-          },
-          dependency: {
-            filename,
-            path,
-            version: checkout.baseline.current.version
-          }
-        }, cxt);
-      }
-    }
-
-    if (configuration === "iteration") {
-      if (checkout && checkout.iteration.current) {
-        await sync({
-          module: {
-            moduleid,
-            code: {
-              paths: {
-                absolute: {
-                  folder
-                }
-              }
-            }
-          },
-          dependency: {
-            filename,
-            path,
-            version: checkout.iteration.current.version
-          }
-        }, cxt);
-      }
-    }
-
+  if (!instanced) {
+    throw new Error("PERFORMER_NOT_INSTANCED");
   }
 
-  return {};
+  const {
+    code: {
+      paths: {
+        absolute: {
+          folder
+        }
+      }
+    }
+  } = instanced;
+
+
+  try {
+
+    const tmpFolder = path.join(folder, "tmp");
+
+    if (fs.existsSync(tmpFolder)) {
+      await exec(["rm -R " + tmpFolder], {}, {}, cxt)
+    }
+
+  } catch (e) {
+    IO.sendEvent("error", {
+      data: e.toString()
+    }, cxt);
+    throw e;
+  }
+
+  return "Configuration cleared";
 }
 
 
@@ -117,25 +64,28 @@ export const configure = async (params, cxt) => {
 export const init = async (params, cxt) => {
 
   const {
-    module: {
-      moduleid,
-      mode,
-      fullname,
-      code: {
-        paths: {
-          absolute: {
-            folder
-          }
-        }
-      }
-    },
-    modules
+    performer: {
+      instanced
+    }
   } = params;
 
+  if (!instanced) {
+    throw new Error("PERFORMER_NOT_INSTANCED");
+  }
+
+  const {
+    code: {
+      paths: {
+        absolute: {
+          folder
+        }
+      }
+    }
+  } = instanced;
 
   try {
 
-    const config = JSON.load(path.join(folder, "config.json"));
+    const config = JUtils.load(path.join(folder, "config.json"));
 
     const distFolder = path.join(folder, "dist");
     if (!fs.existsSync(distFolder)) {
@@ -148,101 +98,171 @@ export const init = async (params, cxt) => {
     const namespaceFolder = path.join(tmpFolder, "namespace")
     if (!fs.existsSync(namespaceFolder)) {
       fs.mkdirSync(namespaceFolder);
-      await Repository.clone(params, config.namespace, namespaceFolder);
+      await Repository.clone(config.namespace, namespaceFolder);
     }
 
-    IO.sendEvent("init.out", {
+  } catch (e) {
+    IO.sendEvent("error", {
+      data: e.toString()
+    }, cxt);
+    throw e;
+  }
+
+  return "Config namespace initialized";
+}
+
+export const start = (params, cxt) => {
+
+  const {
+    performer: {
+      instanced: {
+        code: {
+          paths: {
+            absolute: {
+              folder
+            }
+          }
+        }
+      }
+    }
+  } = params;
+
+  const configPath = path.join(folder, "config.json");
+
+  const watcher = async (operation, cxy) => {
+
+    const {
+      operationid
+    } = operation;
+
+    await wait(100);
+
+    IO.sendEvent("started", {
+      operationid,
       data: ""
     }, cxt);
 
+
+    IO.sendEvent("out", {
+      operationid,
+      data: "Watching config changes for " + configPath
+    }, cxt);
+
+    await build(operation, params, cxt);
+    const watcher = Watcher.watch(configPath, () => {
+
+      IO.sendEvent("out", {
+        operationid,
+        data: "config.json changed..."
+      }, cxt);
+
+      build(operation, params, cxt);
+
+    })
+
+    while (operation.status !== "stopping") {
+      IO.sendEvent("out", {
+        operationid,
+        data: "..."
+      }, cxt);
+      await wait(2500);
+    }
+
+    watcher.close();
+    await wait(100);
+
+    IO.sendEvent("stopped", {
+      operationid,
+      data: ""
+    }, cxt);
+  }
+
+
+  return {
+    promise: watcher,
+    process: null
+  };
+}
+
+
+
+
+const build = (operation, params, cxt) => {
+
+  const {
+    performer: {
+      instanced: {
+        code: {
+          paths: {
+            absolute: {
+              folder
+            }
+          }
+        }
+      }
+    }
+  } = params;
+  const {
+    operationid
+  } = operation;
+
+  try {
+
+    IO.sendEvent("out", {
+      operationid,
+      data: "Start building config..."
+    }, cxt);
+
+    const distFolder = path.join(folder, "dist");
+    const config = JUtils.load(path.join(folder, "config.json"));
+
+    const dependenciesConfigValues = {};
+    const configValues = {};
+
+    for (const moduleid in config.dependencies) {
+      const {
+        version
+      } = config.dependencies[moduleid];
+
+
+      if (version.startsWith("file:")) {
+        const localFolder = path.join(folder, version.replace("file:", ""));
+        const depConfig = JUtils.load(path.join(localFolder, "dist", "config.json"));
+
+        for (const entry in depConfig) {
+          dependenciesConfigValues[entry + '@' + moduleid] = depConfig[entry].value;
+        }
+
+      } else {
+        // get the content from the namespace
+      }
+    }
+
+
+    for (const entry of config.config) {
+      configValues[entry.name] = {
+        value: Config.replace(Config.replace(entry.value, configValues), dependenciesConfigValues),
+        type: entry.type || null
+      };
+    }
+
+
+    JUtils.save(path.join(distFolder, "config.json"),
+      configValues
+    );
+
+    IO.sendEvent("done", {
+      operationid,
+      data: "Config generated: dist/config.json"
+    }, cxt);
+
   } catch (e) {
-    IO.sendEvent("init.err", {
+    IO.sendEvent("error", {
+      operationid,
       data: e.toString()
     }, cxt);
   }
 
 
 
-  return null;
-}
-
-
-export const start = (params, cxt) => {
-
-  return {
-    local: (params, cxt) => {
-
-      const {
-        module: {
-          code: {
-            paths: {
-              absolute: {
-                folder
-              }
-            }
-          }
-        },
-        modules
-      } = params;
-
-      try {
-
-        IO.sendEvent("out.building", {
-          data: ""
-        }, cxt);
-
-        const distFolder = path.join(folder, "dist");
-        const config = JSON.load(path.join(folder, "config.json"));
-
-        const dependenciesConfigValues = {};
-        const configValues = {};
-
-        for (const moduleid in config.dependencies) {
-          const {
-            version
-          } = config.dependencies[moduleid];
-
-
-          if (version.startsWith("file:")) {
-            const localFolder = path.join(folder, version.replace("file:", ""));
-            const depConfig = JSON.load(path.join(localFolder, "dist", "config.json"));
-
-            for (const entry in depConfig) {
-              dependenciesConfigValues[entry + '@' + moduleid] = depConfig[entry].value;
-            }
-
-          } else {
-            // get the content from the namespace
-
-          }
-        }
-
-
-        for (const entry of config.config) {
-          configValues[entry.name] = {
-            value: Config.replace(Config.replace(entry.value, configValues), dependenciesConfigValues),
-            type: entry.type || null
-          };
-        }
-
-
-        JSON.save(path.join(distFolder, "config.json"),
-          configValues
-        );
-
-        IO.sendEvent("out.done", {
-          data: ""
-        }, cxt);
-
-      } catch (e) {
-        IO.sendEvent("out.error", {
-          data: e.toString()
-        }, cxt);
-      }
-
-      return null;
-
-
-    }
-  };
 }

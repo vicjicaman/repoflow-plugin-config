@@ -10,35 +10,6 @@ import {
   IO
 } from '@nebulario/core-plugin-request';
 
-/*
-
-
-
-
-
-task ->
-
-
-execution
-- clear
-- init
-- start
-  - restart
-  - stop
-
-
-plugin
-- clear -> lock request
-- init  -> lock request
-- start -> start operation! => return opid -> saved by the execution -> start and immediate return started!... or error!
-  - restart -> wait stop within plugin and return started!...
-  - stop -> wait stop within plugin and return stopped!
-
-
-
-
-
-*/
 
 const modify = (folder, compFile, func) => {
   const inputPath = path.join(folder, "dist");
@@ -66,30 +37,7 @@ export const start = (params, cxt) => {
       operationid
     } = operation;
 
-    /*const {
-      module: {
-        moduleid,
-        mode,
-        fullname,
-        code: {
-          paths: {
-            absolute: {
-              folder
-            }
-          },
-          dependencies
-        },
-        instance: {
-          instanceid
-        }
-      },
-      modules
-    } = params;
 
-    modify(folder, "service.yaml", content => content);
-    modify(folder, "deployment.yaml", content => content);*/
-
-    console.log("Config watcher started")
 
     await wait(2500);
 
@@ -99,9 +47,9 @@ export const start = (params, cxt) => {
     }, cxt);
 
     while (operation.status !== "stopping") {
-      IO.sendEvent("alive", {
+      IO.sendEvent("out", {
         operationid,
-        data: ""
+        data: "..."
       }, cxt);
       await wait(2500);
     }
@@ -120,3 +68,61 @@ export const start = (params, cxt) => {
     process: null
   };
 }
+
+
+
+
+
+/*
+
+
+
+/*const {
+  module: {
+    moduleid,
+    mode,
+    fullname,
+    code: {
+      paths: {
+        absolute: {
+          folder
+        }
+      },
+      dependencies
+    },
+    instance: {
+      instanceid
+    }
+  },
+  modules
+} = params;
+
+modify(folder, "service.yaml", content => content);
+modify(folder, "deployment.yaml", content => content);
+
+
+
+
+task ->
+
+
+execution
+- clear
+- init
+- start
+  - restart
+  - stop
+
+
+plugin
+- clear -> lock request
+- init  -> lock request
+- start -> start operation! => return opid -> saved by the execution -> start and immediate return started!... or error!
+  - restart -> wait stop within plugin and return started!...
+  - stop -> wait stop within plugin and return stopped!
+
+
+
+
+
+*/
