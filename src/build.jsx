@@ -98,6 +98,11 @@ export const init = async (params, cxt) => {
     const namespaceFolder = path.join(tmpFolder, "namespace")
     if (!fs.existsSync(namespaceFolder)) {
       fs.mkdirSync(namespaceFolder);
+
+      IO.sendEvent("out", {
+        data: "Clonning " + config.namespace + "..."
+      }, cxt);
+
       await Repository.clone(config.namespace, namespaceFolder);
     }
 
@@ -137,10 +142,10 @@ export const start = (params, cxt) => {
 
     await wait(100);
 
-    IO.sendEvent("started", {
+    /*IO.sendEvent("started", {
       operationid,
       data: ""
-    }, cxt);
+    }, cxt);*/
 
 
     IO.sendEvent("out", {
@@ -161,10 +166,10 @@ export const start = (params, cxt) => {
     })
 
     while (operation.status !== "stopping") {
-      IO.sendEvent("out", {
+      /*IO.sendEvent("out", {
         operationid,
         data: "..."
-      }, cxt);
+      }, cxt);*/
       await wait(2500);
     }
 

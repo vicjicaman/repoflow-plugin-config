@@ -41,7 +41,7 @@ export const start = (params, cxt) => {
 
     await wait(2500);
 
-    IO.sendEvent("started", {
+    IO.sendEvent("done", {
       operationid,
       data: ""
     }, cxt);
