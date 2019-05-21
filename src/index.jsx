@@ -13,7 +13,6 @@ import {publish} from './publish';
       sync: Dependencies.sync
     },
     build: {
-      configure: Build.configue,
       clear: Build.clear,
       init: Build.init,
       start: Build.start
