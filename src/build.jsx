@@ -22,24 +22,20 @@ export const clear = async (params, cxt) => {
 
   const {
     performer: {
-      instanced
-    }
-  } = params;
-
-  if (!instanced) {
-    throw new Error("PERFORMER_NOT_INSTANCED");
-  }
-
-  const {
-    code: {
-      paths: {
-        absolute: {
-          folder
+      type,
+      code: {
+        paths: {
+          absolute: {
+            folder
+          }
         }
       }
     }
-  } = instanced;
+  } = params;
 
+  if (type !== "instanced") {
+    throw new Error("PERFORMER_NOT_INSTANCED");
+  }
 
   try {
 
@@ -65,23 +61,20 @@ export const init = async (params, cxt) => {
 
   const {
     performer: {
-      instanced
-    }
-  } = params;
-
-  if (!instanced) {
-    throw new Error("PERFORMER_NOT_INSTANCED");
-  }
-
-  const {
-    code: {
-      paths: {
-        absolute: {
-          folder
+      type,
+      code: {
+        paths: {
+          absolute: {
+            folder
+          }
         }
       }
     }
-  } = instanced;
+  } = params;
+
+  if (type !== "instanced") {
+    throw new Error("PERFORMER_NOT_INSTANCED");
+  }
 
   try {
 
@@ -120,21 +113,25 @@ export const start = (params, cxt) => {
 
   const {
     performer: {
-      instanced: {
-        code: {
-          paths: {
-            absolute: {
-              folder
-            }
+      type,
+      code: {
+        paths: {
+          absolute: {
+            folder
           }
         }
       }
     }
   } = params;
 
+  if (type !== "instanced") {
+    throw new Error("PERFORMER_NOT_INSTANCED");
+  }
+
+
   const configPath = path.join(folder, "config.json");
 
-  const watcher = async (operation, cxy) => {
+  const watcher = async (operation, cxt) => {
 
     const {
       operationid
@@ -196,17 +193,17 @@ const build = (operation, params, cxt) => {
 
   const {
     performer: {
-      instanced: {
-        code: {
-          paths: {
-            absolute: {
-              folder
-            }
+      type,
+      code: {
+        paths: {
+          absolute: {
+            folder
           }
         }
       }
     }
   } = params;
+
   const {
     operationid
   } = operation;
