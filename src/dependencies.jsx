@@ -4,9 +4,9 @@ import path from 'path';
 import {
   Operation,
   IO,
-  JSON,
-  Config
+  JSON
 } from '@nebulario/core-plugin-request';
+import * as Config from '@nebulario/core-config';
 
 export const list = async ({
   module: {
