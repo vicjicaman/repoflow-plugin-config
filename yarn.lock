@@ -9,6 +9,14 @@
   dependencies:
     regenerator-runtime "^0.13.2"
 
+"@nebulario/core-config@link:../core-config":
+  version "0.0.0"
+  uid ""
+
+"@nebulario/core-json@link:../core-json":
+  version "0.0.0"
+  uid ""
+
 "@nebulario/core-plugin-request@1.70.3-master":
   version "1.70.3-master"
   resolved "https://registry.yarnpkg.com/@nebulario/core-plugin-request/-/core-plugin-request-1.70.3-master.tgz#b148ea3289b5dd582764085669011ba871d216a5"
@@ -32,6 +40,10 @@
     child-process-promise "^2.2.1"
     lodash "^4.17.4"
     uuid "^3.3.2"
+
+"@nebulario/core-repository@link:../core-repository":
+  version "0.0.0"
+  uid ""
 
 abbrev@1:
   version "1.1.1"

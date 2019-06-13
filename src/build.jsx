@@ -10,11 +10,10 @@ import {
 import {
   Operation,
   IO,
-  JSON as JUtils,
-  Config,
-  Repository,
   Watcher
 } from '@nebulario/core-plugin-request';
+
+import * as Config from '@nebulario/core-config';
 
 
 
@@ -38,13 +37,7 @@ export const clear = async (params, cxt) => {
   }
 
   try {
-
-    const tmpFolder = path.join(folder, "tmp");
-
-    if (fs.existsSync(tmpFolder)) {
-      await exec(["rm -R " + tmpFolder], {}, {}, cxt)
-    }
-
+    await Config.clear(folder);
   } catch (e) {
     IO.sendEvent("error", {
       data: e.toString()
@@ -77,28 +70,7 @@ export const init = async (params, cxt) => {
   }
 
   try {
-
-    const config = JUtils.load(path.join(folder, "config.json"));
-
-    const distFolder = path.join(folder, "dist");
-    if (!fs.existsSync(distFolder)) {
-      fs.mkdirSync(distFolder);
-    }
-    const tmpFolder = path.join(folder, "tmp");
-    if (!fs.existsSync(tmpFolder)) {
-      fs.mkdirSync(tmpFolder);
-    }
-    const namespaceFolder = path.join(tmpFolder, "namespace")
-    if (!fs.existsSync(namespaceFolder)) {
-      fs.mkdirSync(namespaceFolder);
-
-      IO.sendEvent("out", {
-        data: "Clonning " + config.namespace + "..."
-      }, cxt);
-
-      await Repository.clone(config.namespace, namespaceFolder);
-    }
-
+    await Config.init(folder);
   } catch (e) {
     IO.sendEvent("error", {
       data: e.toString()
@@ -139,12 +111,6 @@ export const start = (params, cxt) => {
 
     await wait(100);
 
-    /*IO.sendEvent("started", {
-      operationid,
-      data: ""
-    }, cxt);*/
-
-
     IO.sendEvent("out", {
       operationid,
       data: "Watching config changes for " + configPath
@@ -163,10 +129,6 @@ export const start = (params, cxt) => {
     })
 
     while (operation.status !== "stopping") {
-      /*IO.sendEvent("out", {
-        operationid,
-        data: "..."
-      }, cxt);*/
       await wait(2500);
     }
 
@@ -215,43 +177,8 @@ const build = (operation, params, cxt) => {
       data: "Start building config..."
     }, cxt);
 
-    const distFolder = path.join(folder, "dist");
-    const config = JUtils.load(path.join(folder, "config.json"));
 
-    const dependenciesConfigValues = {};
-    const configValues = {};
-
-    for (const moduleid in config.dependencies) {
-      const {
-        version
-      } = config.dependencies[moduleid];
-
-
-      if (version.startsWith("file:")) {
-        const localFolder = path.join(folder, version.replace("file:", ""));
-        const depConfig = JUtils.load(path.join(localFolder, "dist", "config.json"));
-
-        for (const entry in depConfig) {
-          dependenciesConfigValues[entry + '@' + moduleid] = depConfig[entry].value;
-        }
-
-      } else {
-        // get the content from the namespace
-      }
-    }
-
-
-    for (const entry of config.config) {
-      configValues[entry.name] = {
-        value: Config.replace(Config.replace(entry.value, configValues), dependenciesConfigValues),
-        type: entry.type || null
-      };
-    }
-
-
-    JUtils.save(path.join(distFolder, "config.json"),
-      configValues
-    );
+    Config.build(folder);
 
     IO.sendEvent("done", {
       operationid,
