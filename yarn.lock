@@ -9,6 +9,14 @@
   dependencies:
     regenerator-runtime "^0.13.2"
 
+"@nebulario/core-config@link:../core-config":
+  version "0.0.0"
+  uid ""
+
+"@nebulario/core-json@link:../core-json":
+  version "0.0.0"
+  uid ""
+
 "@nebulario/core-plugin-request@link:../core-plugin-request":
   version "0.0.0"
   uid ""
