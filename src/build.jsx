@@ -177,7 +177,6 @@ const build = (operation, params, cxt) => {
       data: "Start building config..."
     }, cxt);
 
-
     Config.build(folder);
 
     IO.sendEvent("done", {
@@ -191,7 +190,5 @@ const build = (operation, params, cxt) => {
       data: e.toString()
     }, cxt);
   }
-
-
-
+  
 }
