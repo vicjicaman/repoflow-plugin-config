@@ -14,6 +14,7 @@ import {
 } from '@nebulario/core-plugin-request';
 
 import * as Config from '@nebulario/core-config';
+import * as JsonUtil from '@nebulario/core-json';
 
 
 
@@ -53,7 +54,9 @@ export const clear = async (params, cxt) => {
 export const init = async (params, cxt) => {
 
   const {
+    performers,
     performer: {
+      dependents,
       type,
       code: {
         paths: {
@@ -70,6 +73,40 @@ export const init = async (params, cxt) => {
   }
 
   try {
+
+    for (const depSrv of dependents) {
+      const depSrvPerformer = _.find(performers, {
+        performerid: depSrv.moduleid
+      });
+
+      if (depSrvPerformer) {
+        IO.sendEvent("out", {
+          data: "Performing dependent found " + depSrv.moduleid
+        }, cxt);
+
+        if (depSrvPerformer.linked.includes("build")) {
+
+          IO.sendEvent("info", {
+            data: " - Linked " + depSrv.moduleid
+          }, cxt);
+
+          JsonUtils.sync(folder, {
+            filename: "config.json",
+            path: "dependencies." + depSrv.moduleid + ".version",
+            version: "file:./../" + depSrv.moduleid
+          });
+
+        } else {
+          IO.sendEvent("warning", {
+            data: " - Not linked " + depSrv.moduleid
+          }, cxt);
+        }
+
+
+      }
+
+    }
+
     await Config.init(folder);
   } catch (e) {
     IO.sendEvent("error", {
@@ -85,6 +122,7 @@ export const start = (params, cxt) => {
 
   const {
     performer: {
+      dependents,
       type,
       code: {
         paths: {
@@ -190,5 +228,5 @@ const build = (operation, params, cxt) => {
       data: e.toString()
     }, cxt);
   }
-  
+
 }
