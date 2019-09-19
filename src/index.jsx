@@ -2,7 +2,6 @@ import {IO, Plugin} from '@nebulario/core-plugin-request';
 
 import * as Dependencies from './dependencies';
 import * as Build from './build';
-import * as Run from './run';
 import {publish} from './publish';
 
 (async () => {

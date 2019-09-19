@@ -1,232 +1,150 @@
-import _ from 'lodash'
-import fs from 'fs-extra'
-import path from 'path'
-import YAML from 'yamljs';
-import {
-  exec,
-  spawn,
-  wait
-} from '@nebulario/core-process';
-import {
-  Operation,
-  IO,
-  Watcher
-} from '@nebulario/core-plugin-request';
+import _ from "lodash";
+import fs from "fs-extra";
+import path from "path";
+import { exec, spawn, wait } from "@nebulario/core-process";
+import { Operation, IO, Watcher, Performer } from "@nebulario/core-plugin-request";
 
-import * as Config from '@nebulario/core-config';
-import * as JsonUtil from '@nebulario/core-json';
-
-
+import * as Config from "@nebulario/core-config";
+import * as JsonUtil from "@nebulario/core-json";
 
 export const clear = async (params, cxt) => {
-
   const {
     performer: {
       type,
       code: {
         paths: {
-          absolute: {
-            folder
-          }
+          absolute: { folder }
         }
       }
     }
   } = params;
 
-  if (type !== "instanced") {
-    throw new Error("PERFORMER_NOT_INSTANCED");
-  }
-
-  try {
+  if (type === "instanced") {
     await Config.clear(folder);
-  } catch (e) {
-    IO.sendEvent("error", {
-      data: e.toString()
-    }, cxt);
-    throw e;
   }
-
-  return "Configuration cleared";
-}
-
-
+};
 
 export const init = async (params, cxt) => {
-
   const {
     performers,
+    performer,
     performer: {
       dependents,
       type,
       code: {
         paths: {
-          absolute: {
-            folder
-          }
+          absolute: { folder }
         }
       }
     }
   } = params;
 
-  if (type !== "instanced") {
-    throw new Error("PERFORMER_NOT_INSTANCED");
-  }
+  if (type === "instanced") {
+    Performer.link(performer, performers, depPerformer => {
+      if (depPerformer.module.type === "config") {
+        IO.sendEvent(
+          "info",
+          {
+            data: depPerformer.performerid + " config linked!"
+          },
+          cxt
+        );
 
-  try {
-
-    for (const depSrv of dependents) {
-      const depSrvPerformer = _.find(performers, {
-        performerid: depSrv.moduleid
-      });
-
-      if (depSrvPerformer) {
-        IO.sendEvent("out", {
-          data: "Performing dependent found " + depSrv.moduleid
-        }, cxt);
-
-        if (depSrvPerformer.linked) {
-
-          IO.sendEvent("info", {
-            data: " - Linked " + depSrv.moduleid
-          }, cxt);
-
-          JsonUtils.sync(folder, {
-            filename: "config.json",
-            path: "dependencies." + depSrv.moduleid + ".version",
-            version: "file:./../" + depSrv.moduleid
-          });
-
-        } else {
-          IO.sendEvent("warning", {
-            data: " - Not linked " + depSrv.moduleid
-          }, cxt);
-        }
-
-
+        Config.link(folder, moduleid);
       }
-
-    }
-
+    });
     await Config.init(folder);
-  } catch (e) {
-    IO.sendEvent("error", {
-      data: e.toString()
-    }, cxt);
-    throw e;
   }
-
-  return "Config namespace initialized";
-}
+};
 
 export const start = (params, cxt) => {
-
   const {
     performer: {
       dependents,
       type,
       code: {
         paths: {
-          absolute: {
-            folder
-          }
+          absolute: { folder }
         }
       }
     }
   } = params;
 
-  if (type !== "instanced") {
-    throw new Error("PERFORMER_NOT_INSTANCED");
-  }
+  if (type === "instanced") {
+    const configPath = path.join(folder, "config.json");
 
+    const watcher = async (operation, cxt) => {
+      const { operationid } = operation;
 
-  const configPath = path.join(folder, "config.json");
+      await wait(100);
 
-  const watcher = async (operation, cxt) => {
-
-    const {
-      operationid
-    } = operation;
-
-    await wait(100);
-
-    IO.sendEvent("out", {
-      operationid,
-      data: "Watching config changes for " + configPath
-    }, cxt);
-
-    await build(operation, params, cxt);
-    const watcher = Watcher.watch(configPath, () => {
-
-      IO.sendEvent("out", {
-        operationid,
-        data: "config.json changed..."
-      }, cxt);
+      IO.sendEvent(
+        "out",
+        {
+          operationid,
+          data: "Watching config changes for " + configPath
+        },
+        cxt
+      );
 
       build(operation, params, cxt);
+      const watcher = Watcher.watch(configPath, () => {
+        IO.sendEvent(
+          "info",
+          {
+            operationid,
+            data: "config.json changed..."
+          },
+          cxt
+        );
 
-    })
+        build(operation, params, cxt);
+      });
 
-    while (operation.status !== "stopping") {
-      await wait(2500);
-    }
+      while (operation.status !== "stopping") {
+        await wait(100);
+      }
 
-    watcher.close();
-    await wait(100);
+      watcher.close();
+      IO.sendEvent("stopped", {}, cxt);
+    };
 
-    IO.sendEvent("stopped", {
-      operationid,
-      data: ""
-    }, cxt);
+    return {
+      promise: watcher,
+      process: null
+    };
   }
-
-
-  return {
-    promise: watcher,
-    process: null
-  };
-}
-
-
-
+};
 
 const build = (operation, params, cxt) => {
-
   const {
     performer: {
       type,
       code: {
         paths: {
-          absolute: {
-            folder
-          }
+          absolute: { folder }
         }
       }
     }
   } = params;
 
-  const {
-    operationid
-  } = operation;
+  const { operationid } = operation;
 
-  try {
-
-    IO.sendEvent("out", {
-      operationid,
+  IO.sendEvent(
+    "out",
+    {
       data: "Start building config..."
-    }, cxt);
+    },
+    cxt
+  );
 
-    Config.build(folder);
+  Config.build(folder);
 
-    IO.sendEvent("done", {
-      operationid,
+  IO.sendEvent(
+    "done",
+    {
       data: "Config generated: dist/config.json"
-    }, cxt);
-
-  } catch (e) {
-    IO.sendEvent("error", {
-      operationid,
-      data: e.toString()
-    }, cxt);
-  }
-
-}
+    },
+    cxt
+  );
+};
