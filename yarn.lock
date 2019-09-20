@@ -9,10 +9,10 @@
   dependencies:
     regenerator-runtime "^0.13.2"
 
-"@nebulario/core-config@1.70.0-runtime-reference-prod":
-  version "1.70.0-runtime-reference-prod"
-  resolved "https://registry.yarnpkg.com/@nebulario/core-config/-/core-config-1.70.0-runtime-reference-prod.tgz#ef1dcaf631cc4dbce6b64c086dc5ba57d77ce838"
-  integrity sha512-ceeYeBW5rND5WoSjxcfFZAM/l5aaRlq32stWFeunRJxXo42vsusSdc3irbriJRdsQeRVOP+FZmiEUiyiHKs+lA==
+"@nebulario/core-config@1.70.3-runtime-reference-prod":
+  version "1.70.3-runtime-reference-prod"
+  resolved "https://registry.yarnpkg.com/@nebulario/core-config/-/core-config-1.70.3-runtime-reference-prod.tgz#80a4f07558d05b91940ce476dd9cdfa3c1cb9594"
+  integrity sha512-0wTkL60SGx4zrfT/0FFge78sI+elvGOmyi9i01UWT0IeKbVvb8HWPa0HWiipeW63MBvqocffJSYeNZ2obEFE/w==
   dependencies:
     "@nebulario/core-json" "1.70.1-master"
     "@nebulario/core-repository" "1.70.1-master"
@@ -29,10 +29,10 @@
   dependencies:
     yamljs "^0.3.0"
 
-"@nebulario/core-plugin-request@1.70.0-runtime-reference-prod":
-  version "1.70.0-runtime-reference-prod"
-  resolved "https://registry.yarnpkg.com/@nebulario/core-plugin-request/-/core-plugin-request-1.70.0-runtime-reference-prod.tgz#6f6b7de8cc21a414b08cfbdb81fcc77f8a5ee508"
-  integrity sha512-pt11cvpoc48lB4F4o0TFVvM8T6HpyY2bocREh4D8OsyiXU8J53XYlMc9isJFD7Jm3jXcUYbHA1WI2ChjUk+G1w==
+"@nebulario/core-plugin-request@1.70.3-runtime-reference-prod":
+  version "1.70.3-runtime-reference-prod"
+  resolved "https://registry.yarnpkg.com/@nebulario/core-plugin-request/-/core-plugin-request-1.70.3-runtime-reference-prod.tgz#3c883f18f4b119cb7347f4bb7df31665e135eb9c"
+  integrity sha512-bAvyriSN3UNJlYP7zwHEycm8+AMU47Cz3wTcWpby1+6BMbwa7kX05JmGhT5XX0avBt1mlzWAvdWuO06nJEQHpA==
   dependencies:
     "@nebulario/core-process" "1.70.1-master"
     axios "^0.19.0"
