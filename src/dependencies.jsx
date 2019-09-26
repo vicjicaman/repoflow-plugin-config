@@ -3,10 +3,10 @@ import _ from 'lodash';
 import path from 'path';
 import {
   Operation,
-  IO,
-  JSON
+  IO
 } from '@nebulario/core-plugin-request';
 import * as Config from '@nebulario/core-config';
+import * as JsonUtils from '@nebulario/core-json';
 
 export const list = async ({
   module: {
@@ -46,7 +46,7 @@ export const sync = async ({
 }, cxt) => {
 
   if (version) {
-    JSON.sync(folder, {
+    JsonUtils.sync(folder, {
       filename,
       path,
       version
