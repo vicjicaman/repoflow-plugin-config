@@ -2,8 +2,8 @@ import _ from "lodash";
 import fs from "fs-extra";
 import path from "path";
 import { exec, spawn, wait } from "@nebulario/core-process";
-import { Operation, IO, Watcher, Performer } from "@nebulario/core-plugin-request";
-
+import { Operation, IO, Watcher } from "@nebulario/core-plugin-request";
+import * as Performer from "@nebulario/core-performer";
 import * as Config from "@nebulario/core-config";
 import * as JsonUtil from "@nebulario/core-json";
 
@@ -40,19 +40,13 @@ export const init = async (params, cxt) => {
   } = params;
 
   if (type === "instanced") {
-    Performer.link(performer, performers, depPerformer => {
-      if (depPerformer.module.type === "config") {
-        IO.sendEvent(
-          "info",
-          {
-            data: depPerformer.performerid + " config linked!"
-          },
-          cxt
-        );
-
+    const linked = Performer.linked(performer, performers, cxt)
+      .filter(({ module: { type } }) => type === "config")
+      .forEach(({ performerid, module: { moduleid } }) => {
+        IO.print("info", performerid + " config linked!", cxt);
         Config.link(folder, moduleid);
-      }
-    });
+      });
+
     await Config.init(folder);
   }
 };

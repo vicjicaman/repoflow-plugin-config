@@ -5,7 +5,6 @@ import * as Build from './build';
 import {publish} from './publish';
 
 (async () => {
-
   await Plugin.run("config", {
     dependencies: {
       list: Dependencies.list,
